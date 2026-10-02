@@ -1,0 +1,2 @@
+[console_scripts]
+bangla-pdf-decoder = bangla_pdf_decoder.cli:main

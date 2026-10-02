@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bangla-pdf-decoder"
+version = "0.1.0"
+authors = [
+    { name = "Sowmik", email = "sowmik@example.com" }
+]
+description = "High-speed decoder for legacy & hybrid Bengali PDF font encodings (VOXLMY+Bangla, Election Commission & BD Govt PDFs) into clean Unicode UTF-8."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = [
+    "bangla",
+    "bengali",
+    "pdf",
+    "unicode",
+    "bijoy",
+    "sutonnymj",
+    "font-decoder",
+    "voxlmy-bangla",
+    "bangladesh-election-commission",
+    "text-extraction",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "build",
+    "twine",
+]
+
+[project.scripts]
+bangla-pdf-decoder = "bangla_pdf_decoder.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/sowmiksudo/bangla-pdf-decoder"
+"Bug Tracker" = "https://github.com/sowmiksudo/bangla-pdf-decoder/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]

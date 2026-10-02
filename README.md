@@ -1,0 +1,189 @@
+# bangla-pdf-decoder
+
+[![PyPI version](https://img.shields.io/pypi/v/bangla-pdf-decoder.svg)](https://pypi.org/project/bangla-pdf-decoder/)
+[![Python versions](https://img.shields.io/pypi/pyversions/bangla-pdf-decoder.svg)](https://pypi.org/project/bangla-pdf-decoder/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A high-speed, zero-dependency Python engine to decode legacy & hybrid Bengali font encodings (such as `VOXLMY+Bangla`, Oracle/Crystal Reports exports, Bangladesh Election Commission, Land Ministry, and government gazette PDFs) into clean, standard Unicode UTF-8.
+
+---
+
+## The Problem
+
+When extracting digital Bengali text from government or legacy PDFs using standard PDF libraries (`pypdfium2`, `PyMuPDF / fitz`, `pdfplumber`, `pdfminer`), the output is often heavily corrupted:
+
+```text
+Raw Extracted Text:
+চূড়াĢ Ïভাটার তািলকা
+অûল: ঢাকা Ïজলা: ঢাকা উপেজলা/থানা: ধানমিŒড
+দিÙণ িসিট কেপÎােরশন, ওয়াডÎ নং-১৪, বËবসা
+িঠকানা: কুতুবিদয়া পাড়া, চকিরয়া, কÔবাজার
+```
+
+### Why Existing Converters (`bijoy2unicode`, `avro`, etc.) Fail
+
+Existing libraries like `bijoy2unicode` were designed between 2008 and 2014 for **plain text files typed in Microsoft Word** using an ASCII keyboard layout (e.g., typing `fvUvi` $\rightarrow$ `ভোটার`).
+
+However, modern PDF reporting engines generate a **hybrid TrueType font subset**:
+1. **Base consonants and basic vowels are ALREADY Unicode Bengali** (`U+0980`–`U+09FF`), such as `ভ`, `ট`, `র`, `ক`, `ল`, `ম`.
+2. **Compound conjuncts, prefixes, and ligatures are mapped to 16-bit Latin Extended codepoints** (`U+0080`–`U+01FF`), such as `Ģ`, `Ù`, `×`, `Ô`, `ÿ`, `Ï`.
+
+When passed to standard Bijoy converters, the collision is disastrous:
+
+| Phrase | What the PDF Extractor Gives | Standard `bijoy2unicode` Output | `bangla-pdf-decoder` Output |
+|---|---|---|---|
+| **ভোটার** | `Ïভাটার` | `দ্দভাটার` ❌ *(Ï is Bijoy ASCII for দ্দ)* | **`ভোটার`** ✅ |
+| **দক্ষিণ** | `দিÙণ` | `দদ্মিণ` ❌ *(Ù is Bijoy ASCII for দ্ম)* | **`দক্ষিণ`** ✅ |
+| **কক্সবাজার** | `কÔবাজার` | `ক'বাজার` / `কÔবাজার` ❌ | **`কক্সবাজার`** ✅ |
+| **চট্টগ্রাম** | `চÿগ্রাম` | `চÿগ্রাম` ❌ *(16-bit glyph missing)* | **`চট্টগ্রাম`** ✅ |
+| **ওয়ার্ড** | `ওয়াডÎ` | `ওয়াডত্র` ❌ *(Î is Bijoy ASCII for ত্র)* | **`ওয়ার্ড`** ✅ |
+| **অঞ্চল** | `অûল` | `অহুল` ❌ *(û is Bijoy ASCII for হু)* | **`অঞ্চল`** ✅ |
+| **ব্যবসা** | `বËবসা` | `বত্তবসা` ❌ *(Ë is Bijoy ASCII for ত্ত)* | **`ব্যবসা`** ✅ |
+| **পান্থপথ** | `পাģপথ` | `পাģপথ` ❌ *(unmapped glyph)* | **`পান্থপথ`** ✅ |
+| **ফ্ল্যাট** | `ķËাট` | `ķËাট` ❌ *(unmapped glyph)* | **`ফ্ল্যাট`** ✅ |
+| **বিল্ডিং** | `িবিŏং` | `িবিŏং` ❌ *(unmapped glyph)* | **`বিল্ডিং`** ✅ |
+
+Developers are often forced to resort to OCR (Tesseract), which is **100× slower**, CPU/GPU-intensive, and prone to hallucinations.
+
+`bangla-pdf-decoder` solves this problem at **native extraction speed (300+ pages/second)** with zero OCR.
+
+---
+
+## Features
+
+- **Exhaustive Ligature Support:** Reverse-engineered mapping for 100+ Latin Extended glyphs covering all major Bengali conjuncts (`ক্স`, `ট্ট`, `ব্ব`, `ক্ট`, `চ্চ`, `চ্ছ`, `ঞ্চ`, `ন্ড`, `দ্ব`, `দ্ম`, `ঙ্গ`, `ন্থ`, `প্ল`, `স্ম`, `রু`, `ব্র`, `ব্ল`, `ল্ড`, `ফ্ল`, etc.).
+- **Smart Visual Reordering:**
+  - Converts visual E-kar (`Ï`) and O-kar sequences back into proper logical Unicode order.
+  - Converts visual Reph suffix (`Î`) back into Unicode prefix (`র্`).
+  - Corrects misplaced pre-base vowels without breaking valid Unicode consonants.
+- **Dotted Circle & Nukta Cleanup:** Strips orphaned hasants, dotted circles (`◌ U+25CC`), and invalid sequences.
+- **Zero Heavy Dependencies:** Pure Python, standard library only (`re`).
+- **Blazing Fast:** Over 5,000 records / 300+ pages processed per second.
+
+---
+
+## Installation
+
+```bash
+pip install bangla-pdf-decoder
+```
+
+---
+
+## Quick Start
+
+### 1. Simple String Decoding
+
+```python
+from bangla_pdf_decoder import decode_bangla_pdf_text
+
+raw = "চূড়াĢ Ïভাটার তািলকা, অûল: চÿগ্রাম, কÔবাজার"
+clean = decode_bangla_pdf_text(raw)
+
+print(clean)
+# Output: চূড়ান্ত ভোটার তালিকা, অঞ্চল: চট্টগ্রাম, কক্সবাজার
+```
+
+---
+
+### 2. Integration with `pypdfium2`
+
+```python
+import pypdfium2 as pdfium
+from bangla_pdf_decoder import decode_bangla_pdf_text
+
+doc = pdfium.PdfDocument("voter_list.pdf")
+for page_num, page in enumerate(doc):
+    raw_text = page.get_textpage().get_text_range()
+    clean_text = decode_bangla_pdf_text(raw_text)
+    print(f"--- Page {page_num + 1} ---")
+    print(clean_text)
+```
+
+---
+
+### 3. Integration with `PyMuPDF (fitz)`
+
+```python
+import fitz
+from bangla_pdf_decoder import decode_bangla_pdf_text
+
+doc = fitz.open("government_circular.pdf")
+for page in doc:
+    raw_text = page.get_text()
+    clean_text = decode_bangla_pdf_text(raw_text)
+    print(clean_text)
+```
+
+---
+
+### 4. Integration with `pdfplumber`
+
+```python
+import pdfplumber
+from bangla_pdf_decoder import decode_bangla_pdf_text
+
+with pdfplumber.open("document.pdf") as pdf:
+    for page in pdf.pages:
+        raw_text = page.extract_text()
+        clean_text = decode_bangla_pdf_text(raw_text)
+        print(clean_text)
+```
+
+---
+
+## Command Line Interface (CLI)
+
+`bangla-pdf-decoder` includes a CLI tool for batch file processing and piping:
+
+```bash
+# Decode a file to stdout
+bangla-pdf-decoder input_raw.txt
+
+# Decode a file and write to an output file
+bangla-pdf-decoder input_raw.txt -o output_clean.txt
+
+# Decode via pipe / stdin
+cat raw_dump.txt | bangla-pdf-decoder > clean_dump.txt
+
+# Decode inline text
+bangla-pdf-decoder --text "চূড়াĢ Ïভাটার তািলকা"
+```
+
+---
+
+## Benchmarks
+
+Tested on an Intel Core i7 (11 worker processes):
+- **106,689 pages** processed in **333.14 seconds**
+- **Average speed:** 320.2 pages / second
+- **Records throughput:** 5,600+ records / second
+
+---
+
+## Testing
+
+Run the included test suite with `pytest`:
+
+```bash
+pytest
+```
+
+---
+
+## Contributing
+
+Contributions, bug reports, and additional font glyph mappings from other government or legacy PDF documents are warmly welcome!
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/new-glyph`)
+3. Add tests to `tests/test_decoder.py`
+4. Commit your changes (`git commit -am 'Add mapping for new glyph'`)
+5. Push to the branch (`git push origin feature/new-glyph`)
+6. Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

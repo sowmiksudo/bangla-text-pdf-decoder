@@ -2,24 +2,24 @@
 Core Bengali PDF Font Decoder.
 
 Decodes legacy, hybrid, and subsetted Bengali TrueType font encodings
-(such as VOXLMY+Bangla, Sutonny-in-PDF, Oracle/Crystal Reports exports)
-into clean, standard Bengali Unicode UTF-8.
+(such as VOXLMY+Bangla, SQDAUS+Bangla, Sutonny-in-PDF, Election Commission
+and BD Govt PDFs) into clean, standard Bengali Unicode UTF-8.
 """
 
 import re
 import unicodedata
 from typing import Dict, Any, Optional
 
-# Mapping of composite glyph codes (from VOXLMY+Bangla and similar fonts) to Unicode Bengali
+# Mapping of composite glyph codes (from VOXLMY+Bangla, SQDAUS+Bangla, and similar fonts) to Unicode Bengali
 LIGATURE_MAP: Dict[str, str] = {
     # Key location & name conjuncts
     'ÿ': 'ট্ট',   # চট্টগ্রাম, ভট্টাচার্য, পট্টি, কুট্টি
     'Ô': 'ক্স',   # কক্সবাজার, রিক্সা, বক্স, এপেক্স
     'Ö': 'ক্স',   # অ্যানেক্স
-    'Ñ': 'ব্ব',   # আব্বাস, বক্কর
+    'Ñ': 'ক্ক',   # আব্বাস, বক্কর
     'Ò': 'ক্ট',   # ফ্যাক্টরী, প্রজেক্ট, সেক্টর
     'î': 'চ্চ',   # বাচ্চু
-    'ï': 'চ্ছ',   # মোদাচ্ছের, হাচ্ছদা
+    'ï': 'শু',    # শুভ
     'þ': 'ঞ্চ',   # কাঞ্চন
     'ć': 'ন্ড',   # ধানমন্ডি, মন্ডল
     'ě': 'দ্ব',   # দ্বীন, দ্বিজেন
@@ -36,7 +36,7 @@ LIGATURE_MAP: Dict[str, str] = {
     'ů': 'স্ম',   # স্মৃতি
     'Ƃ': 'রু',   # ফারুক, রূপালী
     'Ǝ': 'স্ত',   # রুস্তম, মস্তুরা
-    'Ə': 'ন্দ্র',  # শৈলেন্দ্র
+    'Ə': 'ন্দু',  # কেন্দুয়া, চান্দু
     'á': 'গ্ন',   # সংলগ্ন
     'ã': 'গ্ল',   # গ্লাস, গ্লোরিয়া
     'ê': 'ঙ্গ',   # জাহাঙ্গীর
@@ -82,7 +82,7 @@ LIGATURE_MAP: Dict[str, str] = {
     'Ř': 'শ্র',   # শ্রী
     'ś': 'শ্ব',   # বিশ্বাস
     'Ũ': 'স্ট',   # স্টাফ
-    'ļ': 'প্ল',   # প্লাবন
+    'ļ': 'ব্ব',   # আব্দুল জব্বার
     'Ƅ': 'ত্র',   # ছাত্র, চিত্র
     'Ø': 'ক্র',   # ক্রিসেন্ট, মাইক্রো
     'ē': 'ত্ত',   # উত্তর, দত্ত
@@ -105,25 +105,55 @@ LIGATURE_MAP: Dict[str, str] = {
     'å': 'গ্র',   # গ্রীনরোড
     'İ': 'প্ত',   # সুপ্ত
     'Ő': 'ল্প',   # কল্পনা, শিল্পী
-    'ę': 'দ্র',   # অদ্রি, মাদ্রাসা
+    'ę': 'চ্ছ',   # ইচ্ছা
     'Ŧ': 'ত্র',   # ছাত্র
     'Ô': 'ক্স',   # কক্সবাজার
     'ŏ': 'ল্ড',   # বিল্ডিং, হোল্ডিং
+    'ĉ': 'ন্ন',   # নুরুন্নাহার
+    'Ū': 'স্থ',   # কবরস্থান
+    '\x8f': 'উ',  # উড়াইকাদি
+    '\x8a': 'দ',  # জাবেদ আলী, আহাদ উল্লা, বাঁশদহ (138)
+    '\x8b': 'ধ্', # মধ্য পাড়া, মধ্য খনজনমারা (139)
     '\x8c': 'ন্', # ধানমন্ডি
     '\x8e': '',
-    '\x91': '',
+    '\x91': 'শ্', # পশ্চিম (145)
+    '\x92': '্য',  # সূর্য (146)
+    '\x95': 'ন্', # মিন্টু (149)
     '°': '',
     'ł': 'ল',
     'ƞ': 'ন্দ',
     'ű': 'স্ট',
-    '¨': '',
+    '¨': 'স',   # সামস উদ্দিন, আব্দুস ছামাদ
     'Ţ': 'ন্ত',
     'Ŵ': 'ণ্ড',
     'ž': 'হ্',
     'Ĳ': 'গ্চ',
-    'Â': 'আ',
+    'Â': 'য়',   # আনোয়ার, সোলায়মান, হৃদয়, মিয়ার
     'è': 'এ',
     'ż': 'ঝ',
+    'Ű': 'স্র',   # ইস্রাফিল, এস্রাব (368)
+    'Ƥ': 'ফু',   # ফুলবাসী (420)
+    'Ì': '্ল',   # সোনাউল্লাহ (204)
+    'Ú': 'ন্ঠ',   # (218)
+    'Ý': 'ন্স',   # (221)
+    'Þ': 'প্ট',   # (222)
+    'à': 'প্প',   # (224)
+    'ü': 'ঞ্ছ',   # বাঞ্ছার চর, পঞ্ছু ভানু (252)
+    'µ': 'ড়',   # বাড়ি, খানপাড়া, উত্তর পাড়া (181)
+    '¤': 'ম্',   # (164)
+    '¥': 'ল্',   # রাশিদুল ইসলাম (165)
+    '¡': '্ব',   # (161)
+    'Û': 'ক্ষ্ম',  # লক্ষ্মীপুর (219)
+    'Š': 'ৗ',   # (352)
+    'Ĝ': 'দ্ধ',   # বুদ্ধি (284)
+    'ŗ': 'ভ্র',   # কাভেরী (343)
+    'ź': 'হ্ব',   # মাহবুবুর (378)
+    'Ė': 'থ্ব',   # পৃথ্বী (278)
+    'ō': 'স্ত্র',  # মিস্ত্রী (333)
+    'Ķ': 'প্স',   # অপ্সরা (310)
+    '\x87': 'ন্', # উপেন্দ্র (135)
+    '\x9b': 'য়',  # জয়নাল (155)
+    '\ufffe': '', # separator (65534)
 }
 
 # Regex pattern matching any valid Bengali consonant or consonant cluster (with optional nukta and hasant)
@@ -151,20 +181,6 @@ WORD_FIXES: Dict[str, str] = {
     'ট্যান্টানারি': 'ট্যানারি',
     'ল্ডক': 'ব্লক',
     'ব্যান্টবসা': 'ব্যবসা',
-    'মধ্যান্ট': 'মধ্য',
-    'ফ্ফপিপাড়া': 'গোপীপাড়া',
-    'গুপিপাড়া': 'গোপীপাড়া',
-    'উন্টর': 'উত্তর',
-    'এলিফ্যান্টান্ট': 'এলিফ্যান্ট',
-    'চেয়ারম্যান্টান': 'চেয়ারম্যান',
-    'আনল্ট': 'আনন্দ',
-    'ইল্টিরা': 'ইন্দিরা',
-    'ষ্টীন': 'গ্রীন',
-    'ষ্টাধীনতা': 'স্বাধীনতা',
-    'ষ্টরনী': 'স্মরণী',
-    'ষ্টরণী': 'স্মরণী',
-    'বেফ্ফন': 'বেগুন',
-    'বেফ্ফনবাড়ী': 'বেগুনবাড়ী',
     'খল্টকার': 'খন্দকার',
     'ব্যান্টাংক': 'ব্যাংক',
     'বিক্টিং': 'বিল্ডিং',
@@ -179,12 +195,15 @@ WORD_FIXES: Dict[str, str] = {
     'চযগ্রাম': 'চট্টগ্রাম',
     'কব্রবাজার': 'কক্সবাজার',
     'কভ্রবাজার': 'কক্সবাজার',
+    'গুজিরেকানা': 'গুজরিকোনা',
+    'নেত্রকানা': 'নেত্রকোনা',
+    'ক্যান্টনেমন্ট': 'ক্যান্টনমেন্ট',
 }
 
 
-def decode_bangla_pdf_text(text: Optional[str]) -> str:
+def decode_bangla_pdf_text(text: str) -> str:
     """
-    Decodes raw text extracted from voter/government PDFs into clean, well-formed Unicode Bengali.
+    Decodes raw text extracted from Bengali PDFs into clean, well-formed Unicode Bengali.
     Handles visual glyph positioning, pre-base vowels, and legacy ligatures.
     """
     if not text:
@@ -265,19 +284,30 @@ def decode_bangla_pdf_text(text: Optional[str]) -> str:
     # Step 11: Standard Unicode NFC normalization
     text = unicodedata.normalize('NFC', text)
 
+    # Step 11b: Fix ordering of modifier characters (Chandrabindu, Anusvara, Visarga)
+    # If typed before a dependent vowel sign in the raw PDF, swap them to logical order
+    # e.g. দঁাত -> দাঁত (দ + া + ঁ)
+    text = re.sub(r'([ঁংঃ])([ািীুূৃেৈোৌ])', r'\2\1', text)
+
+    # Step 11c: Canonical Nukta composition to standard precomposed Bengali letters
+    # Standard Unicode NFC does NOT compose Bengali letters with Nukta (U+09BC)
+    # \u09af + \u09bc -> য় (U+09DF), \u09a1 + \u09bc -> ড় (U+09DC), \u09a2 + \u09bc -> ঢ় (U+09DD)
+    text = text.replace('\u09af\u09bc', 'য়').replace('\u09a1\u09bc', 'ড়').replace('\u09a2\u09bc', 'ঢ়')
+
     # Step 12: Clean multiple consecutive spaces (preserving newlines)
     text = re.sub(r'[ \t]+', ' ', text)
 
     return text.strip()
 
 
-# Backward-compatible aliases
+# Backward-compatible alias
 decode_bengali_text = decode_bangla_pdf_text
 
 
 def decode_record_dict(record: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Decodes all textual values in a dictionary. Leaves non-string values intact.
+    Decodes all textual values in a customer/voter record dictionary.
+    Leaves non-string values intact.
     """
     decoded = {}
     for k, v in record.items():

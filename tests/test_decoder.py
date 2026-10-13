@@ -37,9 +37,10 @@ class TestLocationAndNameLigatures:
         assert "এপেক্স" in decode_bangla_pdf_text("এেপÔ টËানারী")
         assert "এনেক্স" in decode_bangla_pdf_text("এনেÖর এফ-২০৪")
 
-    def test_b_ba_conjuncts(self):
-        """Verify ব্ব (Ñ) in Abbas."""
-        assert "আব্বাস" in decode_bangla_pdf_text("আলী আÑাস িময়া")
+    def test_k_ka_and_b_ba_conjuncts(self):
+        """Verify ক্ক (Ñ) in Akkas and ব্ব (ļ) in Jabbar."""
+        assert "আক্কাস" in decode_bangla_pdf_text("আলী আÑাস িময়া")
+        assert "আব্দুল জব্বার" in decode_bangla_pdf_text("আĺুল জļার")
 
     def test_k_ta_conjuncts(self):
         """Verify ক্ট (Ò) in factory, project, sector."""
@@ -47,10 +48,11 @@ class TestLocationAndNameLigatures:
         assert "সেক্টর" in decode_bangla_pdf_text("ÏসÒর সদর দপ্তর")
         assert "ফ্যাক্টরি" in decode_bangla_pdf_text("ãাস ফËাÒির")
 
-    def test_c_ca_and_c_cha(self):
-        """Verify চ্চ (î) and চ্ছ (ï)."""
+    def test_c_ca_and_c_cha_and_shu(self):
+        """Verify চ্চ (î), চ্ছ (ę), and শু (ï)."""
         assert "বাচ্চু" in decode_bangla_pdf_text("বাîু িময়া")
-        assert "মোদাচ্ছের" in decode_bangla_pdf_text("Ðসয়দ Ïমাদােïর আলী")
+        assert "মোদাচ্ছের" in decode_bangla_pdf_text("Ðসয়দ Ïমাদােęর আলী")
+        assert "শুভ" in decode_bangla_pdf_text("ïভ")
 
     def test_n_tha_conjuncts(self):
         """Verify ন্থ (ģ) in Panthapath."""
@@ -114,7 +116,7 @@ class TestVowelReordering:
     def test_independent_vowel_followed_by_e_kar(self):
         assert "আমেনা" in decode_bangla_pdf_text("আেমনা খাতুন")
         assert "উম্মে" in decode_bangla_pdf_text("উেম্ম কুলসুম")
-        assert "আয়েশা" in decode_bangla_pdf_text("আেয়শা বিবি")
+        assert "আ\u09dfেশা" in decode_bangla_pdf_text("আেয়শা বিবি")
 
     def test_medial_e_kar_reordering(self):
         assert "খালেক" in decode_bangla_pdf_text("খােলক")
@@ -129,3 +131,32 @@ class TestVowelReordering:
     def test_dotted_circle_and_hasant_cleanup(self):
         assert "মোহাম্মদ" in decode_bangla_pdf_text("মো◌্হাম্মদ")
         assert "মোহাম্মদ" in decode_bangla_pdf_text("মো্হাম্মদ")
+
+
+class TestNewlyMappedGlyphs:
+    """Test suite for newly verified embedded font glyph mappings."""
+
+    def test_newly_mapped_glyphs(self):
+        assert "জাবেদ আলী" in decode_bangla_pdf_text("জােব\x8a আলী")
+        assert "আহাদ উল্লা" in decode_bangla_pdf_text("আহা\x8a উŌা")
+        assert "বাঁশদহ" in decode_bangla_pdf_text("বঁাশ\x8aহ")
+        assert "মধ্য পাড়া" in decode_bangla_pdf_text("ম\x8bয পাড়া")
+        assert "পশ্চিম" in decode_bangla_pdf_text("পি\x91চম")
+        assert "সূর্য" in decode_bangla_pdf_text("সূ\x92Î")
+        assert "মিন্টু" in decode_bangla_pdf_text("িম\x95টু")
+        assert "সামস উদ্দিন" in decode_bangla_pdf_text("সাম¨ উিėন")
+        assert "আব্দুস ছামাদ" in decode_bangla_pdf_text("আĺু¨ ছামাদ")
+        assert "বাড়ি" in decode_bangla_pdf_text("বািµ")
+        assert "খানপাড়া" in decode_bangla_pdf_text("খানপাµা")
+        assert "আনোয়ার" in decode_bangla_pdf_text("আেনাÂার")
+        assert "সোলায়মান" in decode_bangla_pdf_text("ÏসালাÂমান")
+        assert "সোনাউল্লাহ" in decode_bangla_pdf_text("ÏসানাউলÌাহ")
+        assert "বাঞ্ছার চর" in decode_bangla_pdf_text("বাüার চর")
+        assert "লক্ষ্মীপুর" in decode_bangla_pdf_text("লÛীপুর")
+        assert "কেন্দুয়া" in decode_bangla_pdf_text("েকƏয়া")
+        assert "চান্দু মিয়া" in decode_bangla_pdf_text("চাƏ িময়া")
+        assert "দাঁতভাঙ্গা" in decode_bangla_pdf_text("দঁাতভাঙ্গা")
+        assert "তেজগাঁও" in decode_bangla_pdf_text("তেজগঁাও")
+        assert "নেত্রকোনা" in decode_bangla_pdf_text("নেত্রকানা")
+        assert "গুজরিকোনা" in decode_bangla_pdf_text("গুজিরেকানা")
+

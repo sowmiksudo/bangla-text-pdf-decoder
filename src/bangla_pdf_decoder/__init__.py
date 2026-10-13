@@ -9,7 +9,7 @@ from .decoder import (
     WORD_FIXES,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Sowmik"
 __all__ = [
     "decode_bangla_pdf_text",
